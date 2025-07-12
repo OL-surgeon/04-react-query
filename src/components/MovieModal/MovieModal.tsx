@@ -8,6 +8,8 @@ interface MovieModalProps {
   onClose: () => void;
 }
 
+const modalRoot = document.getElementById("modal-root")!;
+
 export const MovieModal = ({ movie, onClose }: MovieModalProps) => {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -32,6 +34,8 @@ export const MovieModal = ({ movie, onClose }: MovieModalProps) => {
       className={css.backdrop}
       role="dialog"
       aria-modal="true"
+      aria-labelledby="movie-title"
+      aria-describedby="movie-description"
       onClick={handleBackdropClick}
     >
       <div className={css.modal}>
@@ -42,23 +46,25 @@ export const MovieModal = ({ movie, onClose }: MovieModalProps) => {
         >
           &times;
         </button>
-        <img
-          src={`https://image.tmdb.org/t/p/original${movie.backdrop_path}`}
-          alt={movie.title}
-          className={css.image}
-        />
+        {movie.backdrop_path && (
+          <img
+            src={`https://image.tmdb.org/t/p/original${movie.backdrop_path}`}
+            alt={movie.title}
+            className={css.image}
+          />
+        )}
         <div className={css.content}>
-          <h2>{movie.title}</h2>
-          <p>{movie.overview}</p>
+          <h2 id="movie-title">{movie.title}</h2>
+          <p id="movie-description">{movie.overview}</p>
           <p>
             <strong>Release Date:</strong> {movie.release_date}
           </p>
           <p>
-            <strong>Rating:</strong> {movie.vote_average}/10
+            <strong>Rating:</strong> {movie.vote_average.toFixed(1)}/10
           </p>
         </div>
       </div>
     </div>,
-    document.body
+    modalRoot
   );
 };

@@ -3,10 +3,11 @@
     "jsx": "react-jsx",
     "moduleResolution": "Node",
     "esModuleInterop": true,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "lib": ["DOM", "ESNext"],
     "module": "ESNext",
-    "target": "ESNext"
+    "target": "ESNext",
+    "strict": true
   },
   "include": ["src"]
 }
