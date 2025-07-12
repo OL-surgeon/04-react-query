@@ -12,7 +12,8 @@ import { ErrorMessage } from "../ErrorMessage/ErrorMessage";
 import { MovieModal } from "../MovieModal/MovieModal";
 import { fetchMovies } from "../../services/movieService";
 
-import type { Movie, FetchMoviesResponse } from "../../types/movie";
+import type { Movie } from "../../types/movie";
+import type { FetchMoviesResponse } from "../../services/movieService";
 
 import "./App.css";
 import css from "./App.module.css";
@@ -22,6 +23,7 @@ const useMovies = (query: string, page: number) => {
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: !!query,
+    placeholderData: (prev) => prev,
   };
   return useQuery(options);
 };
@@ -31,8 +33,12 @@ export default function App() {
   const [page, setPage] = useState(1);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  const { data, isLoading, isError } = useMovies(query, page);
-
+  const { data, isLoading, isError, isSuccess } = useMovies(query, page);
+  useEffect(() => {
+    if (isSuccess && data?.results.length === 0) {
+      toast.error("Фільми не знайдено 🕵️");
+    }
+  }, [isSuccess, data]);
   const handleSearchAction = (formData: FormData) => {
     const newQuery = formData.get("query")?.toString().trim();
     if (!newQuery) {
@@ -51,7 +57,7 @@ export default function App() {
   return (
     <>
       <Toaster position="top-right" />
-      <SearchBar action={handleSearchAction} />
+      <SearchBar onSubmit={handleSearchAction} />
 
       {isLoading && <Loader />}
       {isError && <ErrorMessage />}
