@@ -1,14 +1,15 @@
 import axios from "axios";
 import type { FetchMoviesResponse } from "../types/movie";
 
-const BEARER_TOKEN = import.meta.env.VITE_TMDB_BEARER_TOKEN;
-
+const BEARER_TOKEN = import.meta.env.VITE_TMDB_TOKEN;
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const BASE_URL = "https://api.themoviedb.org/3";
 
 export const fetchMovies = async (
   query: string,
   page = 1
 ): Promise<FetchMoviesResponse> => {
+  console.log("Bearer token:", BEARER_TOKEN);
   const response = await axios.get<FetchMoviesResponse>(
     `${BASE_URL}/search/movie`,
     {
@@ -17,6 +18,7 @@ export const fetchMovies = async (
         page,
         include_adult: false,
         language: "en-US",
+        api_key: API_KEY,
       },
       headers: {
         Authorization: `Bearer ${BEARER_TOKEN}`,

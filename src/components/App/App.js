@@ -1,45 +1,42 @@
 "use client";
 import { jsx as _jsx, Fragment as _Fragment, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Toaster, toast } from "react-hot-toast";
+import { useQuery } from "@tanstack/react-query";
+import ReactPaginate from "react-paginate";
 import { SearchBar } from "../SearchBar/SearchBar";
 import { MovieGrid } from "../MovieGrid/MovieGrid";
 import { Loader } from "../Loader/Loader";
 import { ErrorMessage } from "../ErrorMessage/ErrorMessage";
 import { MovieModal } from "../MovieModal/MovieModal";
-import "./App.css";
 import { fetchMovies } from "../../services/movieService";
-const API_KEY = "8eb1c75e4a3c54065cc5bf123fd08d70"; // заміни на свій ключ
-export default function App() {
-    const [movies, setMovies] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(false);
-    const [selectedMovie, setSelectedMovie] = useState(null);
-    const handleSearch = async (query) => {
-        setMovies([]);
-        setLoading(true);
-        setError(false);
-        try {
-            const results = await fetchMovies(query);
-            if (results.length === 0) {
-                toast.error("No movies found for your request.");
-            }
-            setMovies(results);
-        }
-        catch {
-            setError(true);
-        }
-        finally {
-            setLoading(false);
-        }
+import "./App.css";
+import css from "./App.module.css";
+const useMovies = (query, page) => {
+    const options = {
+        queryKey: ["movies", query, page],
+        queryFn: () => fetchMovies(query, page),
+        enabled: !!query,
     };
-    const handleSearchAction = async (formData) => {
-        const query = formData.get("query")?.toString().trim();
-        if (!query) {
-            toast.error("Please enter your search query.");
+    return useQuery(options);
+};
+export default function App() {
+    const [query, setQuery] = useState("");
+    const [page, setPage] = useState(1);
+    const [selectedMovie, setSelectedMovie] = useState(null);
+    const { data, isLoading, isError } = useMovies(query, page);
+    const handleSearchAction = (formData) => {
+        const newQuery = formData.get("query")?.toString().trim();
+        if (!newQuery) {
+            toast.error("Введіть запит для пошуку.");
             return;
         }
-        await handleSearch(query);
+        setPage(1);
+        setQuery(newQuery);
     };
-    return (_jsxs(_Fragment, { children: [_jsx(Toaster, { position: "top-right" }), _jsx(SearchBar, { action: handleSearchAction }), loading && _jsx(Loader, {}), error && _jsx(ErrorMessage, {}), !loading && !error && (_jsx(MovieGrid, { movies: movies, onSelect: setSelectedMovie })), selectedMovie && (_jsx(MovieModal, { movie: selectedMovie, onClose: () => setSelectedMovie(null) }))] }));
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        setSelectedMovie(null);
+    }, [page, query]);
+    return (_jsxs(_Fragment, { children: [_jsx(Toaster, { position: "top-right" }), _jsx(SearchBar, { action: handleSearchAction }), isLoading && _jsx(Loader, {}), isError && _jsx(ErrorMessage, {}), !isLoading && !isError && data && data.results.length === 0 && (_jsx("p", { className: css.noResults, children: "\u041D\u0456\u0447\u043E\u0433\u043E \u043D\u0435 \u0437\u043D\u0430\u0439\u0434\u0435\u043D\u043E \uD83D\uDD75\uFE0F" })), !isLoading && !isError && data && data.results.length > 0 && (_jsxs(_Fragment, { children: [_jsx(MovieGrid, { movies: data.results, onSelect: setSelectedMovie }), data.total_pages > 1 && (_jsx(ReactPaginate, { pageCount: data.total_pages, pageRangeDisplayed: 5, marginPagesDisplayed: 1, onPageChange: ({ selected }) => setPage(selected + 1), forcePage: page - 1, containerClassName: css.pagination, activeClassName: css.active, nextLabel: "\u2192", previousLabel: "\u2190" }))] })), selectedMovie && (_jsx(MovieModal, { movie: selectedMovie, onClose: () => setSelectedMovie(null) }))] }));
 }
