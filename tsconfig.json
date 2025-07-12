@@ -3,6 +3,7 @@
     "jsx": "react-jsx",
     "moduleResolution": "Node",
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": false,
     "lib": ["DOM", "ESNext"],
     "module": "ESNext",
