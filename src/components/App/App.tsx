@@ -11,7 +11,7 @@ import { Loader } from "../Loader/Loader";
 import { ErrorMessage } from "../ErrorMessage/ErrorMessage";
 import { MovieModal } from "../MovieModal/MovieModal";
 import { fetchMovies } from "../../services/movieService";
-
+import { useMemo } from "react";
 import type { Movie } from "../../types/movie";
 import type { FetchMoviesResponse } from "../../services/movieService";
 
@@ -34,19 +34,18 @@ export default function App() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
   const { data, isLoading, isError, isSuccess } = useMovies(query, page);
+
+  const movies = useMemo(() => data?.results ?? [], [data?.results]);
+
   useEffect(() => {
-    if (isSuccess && data?.results.length === 0) {
+    if (isSuccess && movies.length === 0) {
       toast.error("Фільми не знайдено 🕵️");
     }
-  }, [isSuccess, data]);
-  const handleSearchAction = (formData: FormData) => {
-    const newQuery = formData.get("query")?.toString().trim();
-    if (!newQuery) {
-      toast.error("Введіть запит для пошуку.");
-      return;
-    }
+  }, [isSuccess, movies]);
+
+  const handleSearchAction = (query: string) => {
     setPage(1);
-    setQuery(newQuery);
+    setQuery(query);
   };
 
   useEffect(() => {
@@ -57,19 +56,20 @@ export default function App() {
   return (
     <>
       <Toaster position="top-right" />
-      <SearchBar onSubmit={handleSearchAction} />
+      <SearchBar action={handleSearchAction} />
 
       {isLoading && <Loader />}
       {isError && <ErrorMessage />}
-      {!isLoading && !isError && data && data.results.length === 0 && (
+
+      {!isLoading && !isError && movies.length === 0 && (
         <p className={css.noResults}>Нічого не знайдено 🕵️</p>
       )}
 
-      {!isLoading && !isError && data && data.results.length > 0 && (
+      {!isLoading && !isError && movies.length > 0 && (
         <>
-          <MovieGrid movies={data.results} onSelect={setSelectedMovie} />
+          <MovieGrid movies={movies} onSelect={setSelectedMovie} />
 
-          {data.total_pages > 1 && (
+          {data?.total_pages && data.total_pages > 1 && (
             <ReactPaginate
               pageCount={data.total_pages}
               pageRangeDisplayed={5}

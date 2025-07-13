@@ -1,18 +1,40 @@
+"use client";
+
+import { FormEvent } from "react";
+import css from "./SearchBar.module.css";
+import { toast } from "react-hot-toast";
+
 interface SearchBarProps {
-  onSubmit: (formData: FormData) => void;
+  action: (query: string) => void;
 }
 
-export const SearchBar = ({ onSubmit }: SearchBarProps) => {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+export const SearchBar = ({ action }: SearchBarProps) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    onSubmit(formData);
+    const query = formData.get("query")?.toString().trim() || "";
+
+    if (!query) {
+      toast.error("Введіть пошуковий запит.");
+      return;
+    }
+
+    action(query);
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input name="query" placeholder="Search movies..." />
-      <button type="submit">Search</button>
+    <form className={css.form} onSubmit={handleSubmit}>
+      <input
+        type="text"
+        name="query"
+        placeholder="Search movies..."
+        className={css.input}
+        autoComplete="off"
+        autoFocus
+      />
+      <button type="submit" className={css.button}>
+        Search
+      </button>
     </form>
   );
 };
