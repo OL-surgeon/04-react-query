@@ -44,6 +44,10 @@ export default function App() {
   }, [isSuccess, movies]);
 
   const handleSearchAction = (query: string) => {
+    if (!query) {
+      toast.error("Введіть пошуковий запит.");
+      return;
+    }
     setPage(1);
     setQuery(query);
   };
@@ -56,7 +60,7 @@ export default function App() {
   return (
     <>
       <Toaster position="top-right" />
-      <SearchBar action={handleSearchAction} />
+      <SearchBar onSubmit={handleSearchAction} />
 
       {isLoading && <Loader />}
       {isError && <ErrorMessage />}

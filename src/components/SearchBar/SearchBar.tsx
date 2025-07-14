@@ -1,15 +1,12 @@
 "use client";
-
-import { FormEvent } from "react";
-import css from "./SearchBar.module.css";
 import { toast } from "react-hot-toast";
-
-interface SearchBarProps {
-  action: (query: string) => void;
+import css from "./SearchBar.module.css";
+interface Props {
+  onSubmit: (query: string) => void;
 }
 
-export const SearchBar = ({ action }: SearchBarProps) => {
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+export const SearchBar = ({ onSubmit }: Props) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const query = formData.get("query")?.toString().trim() || "";
@@ -19,22 +16,13 @@ export const SearchBar = ({ action }: SearchBarProps) => {
       return;
     }
 
-    action(query);
+    onSubmit(query);
   };
 
   return (
     <form className={css.form} onSubmit={handleSubmit}>
-      <input
-        type="text"
-        name="query"
-        placeholder="Search movies..."
-        className={css.input}
-        autoComplete="off"
-        autoFocus
-      />
-      <button type="submit" className={css.button}>
-        Search
-      </button>
+      <input name="query" placeholder="Search..." />
+      <button type="submit">Search</button>
     </form>
   );
 };
