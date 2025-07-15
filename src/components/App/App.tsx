@@ -2,99 +2,85 @@
 
 import { useState, useEffect } from "react";
 import { Toaster, toast } from "react-hot-toast";
-import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import ReactPaginate from "react-paginate";
 
-import { SearchBar } from "../SearchBar/SearchBar";
+import SearchBar from "../SearchBar/SearchBar";
 import { MovieGrid } from "../MovieGrid/MovieGrid";
 import { Loader } from "../Loader/Loader";
 import { ErrorMessage } from "../ErrorMessage/ErrorMessage";
 import { MovieModal } from "../MovieModal/MovieModal";
 import { fetchMovies } from "../../services/movieService";
-import { useMemo } from "react";
 import type { Movie } from "../../types/movie";
-import type { FetchMoviesResponse } from "../../services/movieService";
 
 import "./App.css";
 import css from "./App.module.css";
 
-const useMovies = (query: string, page: number) => {
-  const options: UseQueryOptions<FetchMoviesResponse, Error> = {
-    queryKey: ["movies", query, page],
-    queryFn: () => fetchMovies(query, page),
-    enabled: !!query,
-    placeholderData: (prev) => prev,
-  };
-  return useQuery(options);
-};
-
 export default function App() {
   const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  const { data, isLoading, isError, isSuccess } = useMovies(query, page);
+  const { data, isError, isSuccess, isFetching } = useQuery({
+    queryKey: ["movies", query, currentPage],
+    queryFn: () => fetchMovies(query, currentPage),
+    enabled: query !== "",
+    placeholderData: keepPreviousData,
+  });
 
-  const movies = useMemo(() => data?.results ?? [], [data?.results]);
-
-  useEffect(() => {
-    if (isSuccess && movies.length === 0) {
-      toast.error("Фільми не знайдено 🕵️");
-    }
-  }, [isSuccess, movies]);
-
-  const handleSearchAction = (query: string) => {
-    if (!query) {
-      toast.error("Введіть пошуковий запит.");
-      return;
-    }
-    setPage(1);
-    setQuery(query);
+  const handleSearch = (searchQuery: string) => {
+    setQuery(searchQuery);
+    setCurrentPage(1);
   };
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (data?.results.length === 0) {
+      toast("No movies found for your request");
+    }
+  }, [data]);
+
+  const totalPages = data?.total_pages ?? 0;
+
+  const handleSelectedMovie = (movie: Movie) => {
+    setSelectedMovie(movie);
+  };
+
+  const closeModal = () => {
     setSelectedMovie(null);
-  }, [page, query]);
+  };
 
   return (
-    <>
-      <Toaster position="top-right" />
-      <SearchBar onSubmit={handleSearchAction} />
+    <div className={css.app}>
+      <SearchBar onSubmit={handleSearch} />
 
-      {isLoading && <Loader />}
+      <Toaster />
+
       {isError && <ErrorMessage />}
 
-      {!isLoading && !isError && movies.length === 0 && (
-        <p className={css.noResults}>Нічого не знайдено 🕵️</p>
+      {isSuccess && totalPages > 1 && (
+        <ReactPaginate
+          pageCount={totalPages}
+          pageRangeDisplayed={3}
+          marginPagesDisplayed={1}
+          onPageChange={({ selected }) => setCurrentPage(selected + 1)}
+          forcePage={currentPage - 1}
+          containerClassName={css.pagination}
+          activeClassName={css.active}
+          nextLabel="→"
+          previousLabel="←"
+          renderOnZeroPageCount={null}
+        />
       )}
 
-      {!isLoading && !isError && movies.length > 0 && (
-        <>
-          <MovieGrid movies={movies} onSelect={setSelectedMovie} />
+      {query !== "" && isFetching && <Loader />}
 
-          {data?.total_pages && data.total_pages > 1 && (
-            <ReactPaginate
-              pageCount={data.total_pages}
-              pageRangeDisplayed={5}
-              marginPagesDisplayed={1}
-              onPageChange={({ selected }) => setPage(selected + 1)}
-              forcePage={page - 1}
-              containerClassName={css.pagination}
-              activeClassName={css.active}
-              nextLabel="→"
-              previousLabel="←"
-            />
-          )}
-        </>
+      {isSuccess && data.results.length > 0 && (
+        <MovieGrid onSelect={handleSelectedMovie} movies={data.results} />
       )}
 
       {selectedMovie && (
-        <MovieModal
-          movie={selectedMovie}
-          onClose={() => setSelectedMovie(null)}
-        />
+        <MovieModal movie={selectedMovie} onClose={closeModal} />
       )}
-    </>
+    </div>
   );
 }
